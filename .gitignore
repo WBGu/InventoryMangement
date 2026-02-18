@@ -14,5 +14,4 @@ node_modules/
 .vscode/
 .idea/
 
-# Ignore data files
-.json/
+echo "inventory.json" >> .gitignore
