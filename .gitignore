@@ -1,17 +1,9 @@
-# Ignore build artifacts
-dist/
-build/
-*.o
-*.exe
-
-# Ignore dependencies
-node_modules/
-
-# Ignore local environment variables
+# Python
+__pycache__/
+*.py[cod]
 .env
+venv/
 
-# Ignore IDE settings
-.vscode/
-.idea/
-
-echo "inventory.json" >> .gitignore
+*.log
+.ipynb_checkpoints/
+data/*.json
