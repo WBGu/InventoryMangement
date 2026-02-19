@@ -357,9 +357,16 @@ class InventoryApp:
             messagebox.showerror("Copy Error", f"Failed to copy inventory to repo: {e}")
             return
 
-        script_path = "./git_sync.sh"
+        bash_script_path = "./git_sync.sh"
+        bat_script_path = "git_sync.bat"
+        
         try:
-            result = subprocess.run(["bash", script_path, DATA_REPO_PATH], capture_output=True, text=True)
+            
+            # Git Bash/Linux
+            #result = subprocess.run(["bash", bash_script_path, DATA_REPO_PATH], capture_output=True, text=True)
+            # Windows
+            result = subprocess.run(["cmd.exe", "/c", bat_script_path, DATA_REPO_PATH], capture_output=True, text=True)
+            
             if result.returncode == 0:
                 messagebox.showinfo("Git Push Success", result.stdout)
             else:
