@@ -8,10 +8,10 @@ import shutil
 from collections import Counter
 
 # --- CONFIGURATION ---
-# UPDATE THIS PATH to your separate Data Repo folder
+# This is the path to the separate inventory data repository folder. Should have .git in it
 DATA_REPO_PATH = r"C:\Users\weibi\Desktop\InventoryMangement\Inventory" 
 
-# The name of the file
+# The name of the inventory file
 FILENAME = "inventory.json"
 
 # Derived Paths
@@ -21,8 +21,11 @@ REMOTE_FILE = os.path.join(DATA_REPO_PATH, FILENAME)
 class InventoryApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Inventory System - POS View")
+        self.root.title("Inventory System")
         self.root.geometry("1200x700")
+        
+        # Intercept the window close button (X)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         # Load Inventory
         self.inventory = self.load_inventory()
@@ -31,7 +34,7 @@ class InventoryApp:
         control_frame = tk.Frame(self.root)
         control_frame.pack(fill="x", padx=10, pady=10)
 
-        # 1. PULL BUTTON
+        # PULL BUTTON
         self.btn_pull = tk.Button(
             control_frame, 
             text="⬇ Pull Remote", 
@@ -40,7 +43,7 @@ class InventoryApp:
         )
         self.btn_pull.pack(side="left", padx=(0, 5))
 
-        # 2. FINALIZE BUTTON
+        # FINALIZE BUTTON
         self.btn_finalize = tk.Button(
             control_frame, 
             text="✔ Finalize Transaction (Save)", 
@@ -49,20 +52,78 @@ class InventoryApp:
         )
         self.btn_finalize.pack(side="left", padx=(5, 5))
 
-        # 3. PUSH BUTTON
+        # PUSH BUTTON
         self.btn_push = tk.Button(
             control_frame, 
             text="⬆ Push to Git", 
             bg="#2196F3", fg="white", font=("Arial", 10, "bold"),
             command=self.push_inventory_data
         )
-        self.btn_push.pack(side="left", padx=(5, 0))
+        self.btn_push.pack(side="left", padx=(5, 5))
+        
+        
+        # ADD ROWS BUTTON
+        self.btn_add_rows = tk.Button(
+            control_frame, 
+            text="+ Add 10 Rows", 
+            bg="#9E9E9E", fg="white", font=("Arial", 10, "bold"),
+            command=self.add_more_rows
+        )
+        self.btn_add_rows.pack(side="left", padx=(5, 5))
+        
+        # COPY GRID BUTTON
+        self.btn_copy = tk.Button(
+            control_frame, 
+            text="📋 Copy Grid", 
+            bg="#673AB7", fg="white", font=("Arial", 10, "bold"),
+            command=self.copy_grid_to_clipboard
+        )
+        self.btn_copy.pack(side="left", padx=(5, 5))
+        
+        # CLEAR GRID
+        self.btn_add_rows = tk.Button(
+            control_frame, 
+            text="Clear Grid", 
+            bg="#f74545", fg="white", font=("Arial", 10, "bold"),
+            command=self.clear_grid
+        )
+        self.btn_add_rows.pack(side="left", padx=(5, 0))
+        
+        
         
         # Legend
         tk.Label(control_frame, text="Legend: ", font=("Arial", 10, "bold")).pack(side="left", padx=(40, 0))
         tk.Label(control_frame, text=" OK ", bg="#DFF0D8").pack(side="left", padx=2)
         tk.Label(control_frame, text=" Oversold ", bg="orange").pack(side="left", padx=2)
         tk.Label(control_frame, text=" Invalid ID ", bg="#FFCDD2").pack(side="left", padx=2)
+        
+        # --- Time Input Panel ---
+        time_frame = tk.Frame(self.root)
+        time_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        # Variables to store the inputs
+        self.month_var = tk.StringVar()
+        self.day_var = tk.StringVar()
+        self.hour_var = tk.StringVar()
+        self.minute_var = tk.StringVar()
+        self.ampm_var = tk.StringVar()
+
+        tk.Label(time_frame, text="Start Time: ", font=("Arial", 20, "bold")).pack(side="left")
+
+        tk.Entry(time_frame, textvariable=self.month_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
+        tk.Label(time_frame, text="Month", font=("Arial", 20)).pack(side="left", padx=(2, 10))
+
+        tk.Entry(time_frame, textvariable=self.day_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
+        tk.Label(time_frame, text="Day", font=("Arial", 20)).pack(side="left", padx=(2, 10))
+
+        tk.Entry(time_frame, textvariable=self.hour_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
+        tk.Label(time_frame, text="Hour", font=("Arial", 20)).pack(side="left", padx=(2, 10))
+
+        tk.Entry(time_frame, textvariable=self.minute_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
+        tk.Label(time_frame, text="Minute", font=("Arial", 20)).pack(side="left", padx=(2, 10))
+
+        tk.Entry(time_frame, textvariable=self.ampm_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
+        tk.Label(time_frame, text="AM/PM", font=("Arial", 20)).pack(side="left", padx=(2, 10))
 
         # --- Sheet Setup ---
         self.sheet_frame = tk.Frame(self.root)
@@ -73,7 +134,7 @@ class InventoryApp:
         self.sheet = Sheet(self.sheet_frame,
                            headers=headers,
                            total_columns=11,
-                           total_rows=30)
+                           total_rows=15)
         
         self.sheet.enable_bindings(("single_select", "row_select", "column_width_resize", 
                                     "arrowkeys", "rc_select", "copy", "cut", "paste", 
@@ -84,9 +145,72 @@ class InventoryApp:
         self.sheet.extra_bindings("end_edit_cell", func=self.validate_entire_sheet)
         self.sheet.extra_bindings("end_paste", func=self.validate_entire_sheet)
         
-        self.sheet.set_all_cell_sizes_to_text()
+        
+        #self.sheet.set_all_cell_sizes_to_text()
+        self.sheet.set_column_widths([200] + [85] * 10)
 
+    def on_closing(self):
+        """Prompt the user before closing the application."""
+        if messagebox.askyesno("Exit Confirmation", "Are you sure you want to exit?\nUnsaved work on the grid will be lost."):
+            self.root.destroy()
+            
+    def add_more_rows(self):
+        """Adds 10 empty rows to the bottom of the sheet."""
+        for _ in range(10):
+            self.sheet.insert_row() # Appends a row by default
+        self.sheet.redraw()
+        
+    def copy_grid_to_clipboard(self):
+        """Copies headers + data to clipboard as Tab-Separated Values (TSV)."""
+        try:
+            # Format as TSV (Tab Separated Values)
+            clipboard_text = ""
+            
+            # Get Headers and Variables
+            headers = self.sheet.headers()
+            m = self.month_var.get()
+            d = self.day_var.get()
+            h = self.hour_var.get()
+            mins = self.minute_var.get()
+            ampm = self.ampm_var.get()
+            
+            clipboard_text += f"{m}\tMonth\t{d}\tDay\t{h}\tHour\t{mins}\tMinutes\t{ampm}\tAM/PM\n"
+            
+            # Add Headers
+            clipboard_text += "\t".join([str(h) for h in headers]) + "\n"
+            
+            # Get Data
+            data = self.sheet.get_sheet_data()
+            
+            # Add Rows
+            for row in data:
+                # Convert None to empty string
+                clean_row = [str(x) if x is not None else "" for x in row]
+                clipboard_text += "\t".join(clean_row) + "\n"
+            
+            # Push to Clipboard
+            self.root.clipboard_clear()
+            self.root.clipboard_append(clipboard_text)
+            self.root.update()
+            
+            messagebox.showinfo("Success", "Grid copied to clipboard!\nYou can now Paste (Ctrl+V) into excel/sheets.")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to copy: {e}")
+    
+    def clear_grid(self):
+        """Clears the grid"""
+        # Clear Sheet
+        if not messagebox.askyesno("Clear Grid","This will clear the grid. Unsaved changes will be lost. Proceed?"):
+            return
+        self.sheet.set_sheet_data([["" for _ in range(11)] for _ in range(30)])
+
+        
+        
     def load_inventory(self):
+        """
+        Load the inventory from the local provided json file. If remote file is provided, copy that to local file.
+        """
         if not os.path.exists(LOCAL_FILE):
             if os.path.exists(REMOTE_FILE):
                 shutil.copy(REMOTE_FILE, LOCAL_FILE)
@@ -101,6 +225,9 @@ class InventoryApp:
             return {}
 
     def save_inventory_locally(self):
+        """
+        Write local changes to the local json file. The local file will be changed, but not committed or pushed.
+        """
         try:
             with open(LOCAL_FILE, 'w') as f:
                 json.dump(self.inventory, f, indent=4)
@@ -111,7 +238,7 @@ class InventoryApp:
         """
         Updates inventory and ALERTS if items hit 0 stock.
         """
-        # 1. Tally Items
+        # Tally Items
         all_data = self.sheet.get_sheet_data()
         transaction_counts = Counter()
         
@@ -125,7 +252,7 @@ class InventoryApp:
             messagebox.showinfo("Info", "No items to finalize.")
             return
 
-        # 2. Validate before committing
+        # Validate before committing
         for item_id, qty_needed in transaction_counts.items():
             if item_id not in self.inventory:
                 messagebox.showerror("Error", f"Item '{item_id}' is invalid.")
@@ -134,12 +261,12 @@ class InventoryApp:
                 messagebox.showerror("Error", f"Item '{item_id}' is oversold.")
                 return
 
-        # 3. Confirm
+        # Confirm
         confirm = messagebox.askyesno("Confirm", "Finalize transaction and update inventory?")
         if not confirm:
             return
 
-        # 4. Update Inventory & Track Zeros
+        # Update Inventory & Track Zeros
         items_hit_zero = [] # List to track items that become out of stock
 
         for item_id, qty_used in transaction_counts.items():
@@ -151,19 +278,19 @@ class InventoryApp:
         
         self.save_inventory_locally()
         
-        # 5. Clear Sheet
-        self.sheet.set_sheet_data([["" for _ in range(11)] for _ in range(30)])
-        self.sheet.redraw()
+        # Clear Sheet
+        # self.sheet.set_sheet_data([["" for _ in range(11)] for _ in range(30)])
+        # self.sheet.redraw()
 
-        # 6. Success Message + OUT OF STOCK WARNING
+        # Success Message + OUT OF STOCK WARNING
         success_msg = "Transaction Finalized Successfully!"
         
         if items_hit_zero:
             # Create a warning list string
             zero_list_str = "\n".join([f"• {item}" for item in items_hit_zero])
-            warning_msg = f"{success_msg}\n\n The following items are now OUT OF STOCK:\n{zero_list_str}"
+            warning_msg = f"{success_msg}\n\n The following items are now OUT OF STOCK:\n{zero_list_str}\n Change it on the platform!!"
             
-            # Use showwarning for emphasis
+            # Use warning for emphasis
             messagebox.showwarning("Stock Alert", warning_msg)
         else:
             messagebox.showinfo("Success", success_msg)
@@ -178,12 +305,12 @@ class InventoryApp:
             messagebox.showerror("Error", f"Data Repo path not found:\n{DATA_REPO_PATH}")
             return
 
-        # Warning: This is a destructive action for unsaved changes
+        # Forced actions on unsaved changes
         if not messagebox.askyesno("Force Update", "This will overwrite your local inventory with the version from Git.\nAny unsaved changes will be lost.\nProceed?"):
             return
 
         try:
-            # 1. Fetch all latest changes from the remote (without merging yet)
+            # Fetch all latest changes from the remote (without merging yet)
             fetch_result = subprocess.run(
                 ["git", "fetch", "--all"], 
                 cwd=DATA_REPO_PATH, 
@@ -191,8 +318,7 @@ class InventoryApp:
                 text=True
             )
 
-            # 2. FORCE Reset the repo to match origin/main
-            # Note: If your branch is 'master', change 'origin/main' to 'origin/master'
+            # FORCE Reset the repo to match origin/main
             reset_result = subprocess.run(
                 ["git", "reset", "--hard", "origin/main"], 
                 cwd=DATA_REPO_PATH, 
@@ -204,14 +330,14 @@ class InventoryApp:
                 messagebox.showerror("Git Error", f"Reset failed:\n{reset_result.stderr}")
                 return
 
-            # 3. Copy the fresh file from Data Repo to Script Folder
+            # Copy the fresh file from Data Repo to Script Folder
             if os.path.exists(REMOTE_FILE):
                 shutil.copy(REMOTE_FILE, LOCAL_FILE)
                 
-                # 4. Reload the data into the App memory
+                # Reload the data into the App memory
                 self.inventory = self.load_inventory()
                 
-                # 5. Re-validate the sheet (update colors based on new stock)
+                # Re-validate the sheet (update colors based on new stock)
                 self.validate_entire_sheet()
                 
                 messagebox.showinfo("Success", f"Inventory Force Updated!\nServer status: {reset_result.stdout}")
@@ -222,6 +348,9 @@ class InventoryApp:
             messagebox.showerror("Error", str(e))
 
     def push_inventory_data(self):
+        """
+        git add, commit, push to the repo by calling a bash script.
+        """
         try:
             shutil.copy(LOCAL_FILE, REMOTE_FILE)
         except Exception as e:
@@ -239,6 +368,9 @@ class InventoryApp:
             messagebox.showerror("Error", str(e))
 
     def validate_entire_sheet(self, event=None):
+        """
+        Validate every cell in the sheet against inventory to see if anything is invalid or oversold. 
+        """
         try:
             all_data = self.sheet.get_sheet_data()
             item_counts = Counter()
@@ -256,14 +388,18 @@ class InventoryApp:
                     else: item_id = str(raw_val).strip().upper()
 
                     if not item_id:
+                        # Don't highlight if None
                         self.sheet.highlight_cells(row=row_idx, column=col_idx, bg=None, redraw=False)
                         continue
 
                     if item_id not in self.inventory:
+                        # Invalid - Red
                         self.sheet.highlight_cells(row=row_idx, column=col_idx, bg="#FFCDD2", redraw=False)
                     elif item_counts[item_id] > self.inventory[item_id]:
+                        # Oversold - Orange
                         self.sheet.highlight_cells(row=row_idx, column=col_idx, bg="orange", redraw=False)
                     else:
+                        # OK - Green
                         self.sheet.highlight_cells(row=row_idx, column=col_idx, bg="#DFF0D8", redraw=False)
             
             self.sheet.redraw()

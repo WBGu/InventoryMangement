@@ -14,10 +14,10 @@ cd "$TARGET_DIR" || exit
 
 echo "Syncing inside: $(pwd)"
 
-# 1. Add changes
+# Add all changes
 git add .
 
-# 2. Commit
+# Commit
 if git diff --cached --quiet; then
     echo "No changes to commit."
 else
