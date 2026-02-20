@@ -32,7 +32,7 @@ class InventoryApp:
 
         # --- Top Control Panel ---
         control_frame = tk.Frame(self.root)
-        control_frame.pack(fill="x", padx=10, pady=10)
+        control_frame.pack(fill="x", padx=10, pady=5)
 
         # PULL BUTTON
         self.btn_pull = tk.Button(
@@ -125,9 +125,13 @@ class InventoryApp:
         tk.Entry(time_frame, textvariable=self.ampm_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
         tk.Label(time_frame, text="AM/PM", font=("Arial", 20)).pack(side="left", padx=(2, 10))
 
-        # --- Sheet Setup ---
-        self.sheet_frame = tk.Frame(self.root)
-        self.sheet_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        # --- Content Area ---
+        main_content_frame = tk.Frame(self.root)
+        main_content_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # LEFT SIDE: Sheet Setup
+        self.sheet_frame = tk.Frame(main_content_frame)
+        self.sheet_frame.pack(side="left", fill="both", expand=True)
 
         headers = ["Buyer"] + ["Item ID"] * 10
         
@@ -140,19 +144,54 @@ class InventoryApp:
                                     "arrowkeys", "rc_select", "copy", "cut", "paste", 
                                     "delete", "undo", "edit_cell"))
         self.sheet.pack(fill="both", expand=True)
+        
+        #self.sheet.set_all_cell_sizes_to_text()
+        col_widths = [200] + [85] * 10
+        self.sheet.set_column_widths(col_widths)
 
         # Bind events
         self.sheet.extra_bindings("end_edit_cell", func=self.validate_entire_sheet)
         self.sheet.extra_bindings("end_paste", func=self.validate_entire_sheet)
         
+        # RIGHT SIDE: Inventory Display Panel
+        self.inv_display_frame = tk.Frame(main_content_frame, width=220)
+        self.inv_display_frame.pack(side="right", fill="y", padx=(10, 0))
+        self.inv_display_frame.pack_propagate(False) # Prevents frame from shrinking
+
+        tk.Label(self.inv_display_frame, text="Current Inventory", font=("Arial", 10, "bold"), bg="#E0E0E0").pack(fill="x", pady=(0, 5))
+
+        # Scrollbar and Text area
+        self.inv_scrollbar = tk.Scrollbar(self.inv_display_frame)
+        self.inv_scrollbar.pack(side="right", fill="y")
+
+        self.inv_text = tk.Text(self.inv_display_frame, yscrollcommand=self.inv_scrollbar.set, font=("Courier", 11), state="disabled", bg="#F8F9FA")
+        self.inv_text.pack(side="left", fill="both", expand=True)
+        self.inv_scrollbar.config(command=self.inv_text.yview)
+
+        # Populate the display initially
+        self.update_inventory_display()
         
-        #self.sheet.set_all_cell_sizes_to_text()
-        self.sheet.set_column_widths([200] + [85] * 10)
 
     def on_closing(self):
         """Prompt the user before closing the application."""
         if messagebox.askyesno("Exit Confirmation", "Are you sure you want to exit?\nUnsaved work on the grid will be lost."):
             self.root.destroy()
+            
+    def update_inventory_display(self):
+        """Formats and displays the inventory dictionary in the side panel."""
+        self.inv_text.config(state="normal") # Unlock text box
+        self.inv_text.delete("1.0", tk.END)  # Clear old data
+        
+        # Build the string
+        display_str = "ID      | Qty\n"
+        display_str += "-" * 15 + "\n"
+        
+        # Sort inventory alphabetically by ID for clean reading
+        for item_id, qty in sorted(self.inventory.items()):
+            display_str += f"{item_id:<8}| {qty}\n"
+            
+        self.inv_text.insert(tk.END, display_str)
+        self.inv_text.config(state="disabled")
             
     def add_more_rows(self):
         """Adds 10 empty rows to the bottom of the sheet."""
@@ -281,6 +320,9 @@ class InventoryApp:
         # Clear Sheet
         # self.sheet.set_sheet_data([["" for _ in range(11)] for _ in range(30)])
         # self.sheet.redraw()
+        
+        # Update the right-side text display immediately after deducting stock
+        self.update_inventory_display() 
 
         # Success Message + OUT OF STOCK WARNING
         success_msg = "Transaction Finalized Successfully!"
@@ -336,6 +378,9 @@ class InventoryApp:
                 
                 # Reload the data into the App memory
                 self.inventory = self.load_inventory()
+                
+                # Update the display panel and the grid validation colors
+                self.update_inventory_display()
                 
                 # Re-validate the sheet (update colors based on new stock)
                 self.validate_entire_sheet()
