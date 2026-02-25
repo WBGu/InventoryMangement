@@ -32,7 +32,8 @@ class InventoryApp:
 
         # --- Top Control Panel ---
         control_frame = tk.Frame(self.root)
-        control_frame.pack(fill="x", padx=10, pady=5)
+        control_frame.pack(fill="x", padx=10, pady=(10, 5))
+        #control_frame.pack(fill="x", padx=10, pady=5)
 
         # PULL BUTTON
         self.btn_pull = tk.Button(
@@ -160,6 +161,20 @@ class InventoryApp:
 
         tk.Label(self.inv_display_frame, text="Current Inventory", font=("Arial", 10, "bold"), bg="#E0E0E0").pack(fill="x", pady=(0, 5))
 
+        search_frame = tk.Frame(self.inv_display_frame)
+        search_frame.pack(fill="x", pady=(0, 5))
+
+        self.search_var = tk.StringVar()
+        self.search_entry = tk.Entry(search_frame, textvariable=self.search_var, width=12)
+        self.search_entry.pack(side="left", padx=(0, 2))
+        self.search_entry.bind("<Return>", self.search_inventory) # Bind Enter key
+
+        self.search_btn = tk.Button(search_frame, text="🔍", command=self.search_inventory)
+        self.search_btn.pack(side="left")
+
+        self.search_result_label = tk.Label(search_frame, text="Qty: -", font=("Arial", 10, "bold"))
+        self.search_result_label.pack(side="left", padx=(5, 0))
+
         # Scrollbar and Text area
         self.inv_scrollbar = tk.Scrollbar(self.inv_display_frame)
         self.inv_scrollbar.pack(side="right", fill="y")
@@ -176,6 +191,23 @@ class InventoryApp:
         """Prompt the user before closing the application."""
         if messagebox.askyesno("Exit Confirmation", "Are you sure you want to exit?\nUnsaved work on the grid will be lost."):
             self.root.destroy()
+         
+    def search_inventory(self, event=None):
+        """Looks up the item ID in the search bar and displays the quantity."""
+        query = self.search_var.get().strip().upper()
+        
+        if not query:
+            self.search_result_label.config(text="Qty: -", fg="black")
+            return
+            
+        if query in self.inventory:
+            qty = self.inventory[query]
+            if qty > 0:
+                self.search_result_label.config(text=f"Qty: {qty}", fg="green")
+            else:
+                self.search_result_label.config(text=f"Qty: 0", fg="red")
+        else:
+            self.search_result_label.config(text="Not Found", fg="red")
             
     def update_inventory_display(self):
         """Formats and displays the inventory dictionary in the side panel."""
