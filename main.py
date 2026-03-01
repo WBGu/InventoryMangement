@@ -119,23 +119,27 @@ class InventoryApp:
         self.hour_var = tk.StringVar()
         self.minute_var = tk.StringVar()
         self.ampm_var = tk.StringVar()
+        self.git_var = tk.StringVar()
 
-        tk.Label(time_frame, text="Start Time: ", font=("Arial", 20, "bold")).pack(side="left")
+        tk.Label(time_frame, text="Start Time: ", font=("Arial", 18, "bold")).pack(side="left")
 
-        tk.Entry(time_frame, textvariable=self.month_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
-        tk.Label(time_frame, text="Month", font=("Arial", 20)).pack(side="left", padx=(2, 10))
+        tk.Entry(time_frame, textvariable=self.month_var, width=5, font=("Arial", 18, "bold")).pack(side="left")
+        tk.Label(time_frame, text="Month", font=("Arial", 18)).pack(side="left", padx=(2, 10))
 
-        tk.Entry(time_frame, textvariable=self.day_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
-        tk.Label(time_frame, text="Day", font=("Arial", 20)).pack(side="left", padx=(2, 10))
+        tk.Entry(time_frame, textvariable=self.day_var, width=5, font=("Arial", 18, "bold")).pack(side="left")
+        tk.Label(time_frame, text="Day", font=("Arial", 18)).pack(side="left", padx=(2, 10))
 
-        tk.Entry(time_frame, textvariable=self.hour_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
-        tk.Label(time_frame, text="Hour", font=("Arial", 20)).pack(side="left", padx=(2, 10))
+        tk.Entry(time_frame, textvariable=self.hour_var, width=5, font=("Arial", 18, "bold")).pack(side="left")
+        tk.Label(time_frame, text="Hour", font=("Arial", 18)).pack(side="left", padx=(2, 10))
 
-        tk.Entry(time_frame, textvariable=self.minute_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
-        tk.Label(time_frame, text="Minute", font=("Arial", 20)).pack(side="left", padx=(2, 10))
+        tk.Entry(time_frame, textvariable=self.minute_var, width=5, font=("Arial", 18, "bold")).pack(side="left")
+        tk.Label(time_frame, text="Minute", font=("Arial", 18)).pack(side="left", padx=(2, 10))
 
-        tk.Entry(time_frame, textvariable=self.ampm_var, width=5, font=("Arial", 20, "bold")).pack(side="left")
-        tk.Label(time_frame, text="AM/PM", font=("Arial", 20)).pack(side="left", padx=(2, 10))
+        tk.Entry(time_frame, textvariable=self.ampm_var, width=5, font=("Arial", 18, "bold")).pack(side="left")
+        tk.Label(time_frame, text="AM/PM", font=("Arial", 18)).pack(side="left", padx=(2, 10))
+        
+        tk.Entry(time_frame, textvariable=self.git_var, width=5, font=("Arial", 18, "bold")).pack(side="left")
+        tk.Label(time_frame, text="Git?", font=("Arial", 18)).pack(side="left", padx=(2, 10))
 
         # --- Content Area ---
         main_content_frame = tk.Frame(self.root)
@@ -255,8 +259,9 @@ class InventoryApp:
             h = self.hour_var.get()
             mins = self.minute_var.get()
             ampm = self.ampm_var.get()
+            git_pushed = self.git_var.get()
             
-            clipboard_text += f"{m}\tMonth\t{d}\tDay\t{h}\tHour\t{mins}\tMinutes\t{ampm}\tAM/PM\n"
+            clipboard_text += f"{m}\tMonth\t{d}\tDay\t{h}\tHour\t{mins}\tMinutes\t{ampm}\t{git_pushed}\tGitPushed\n"
             
             # Add Headers
             clipboard_text += "\t".join([str(h) for h in headers]) + "\n"
