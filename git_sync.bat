@@ -33,5 +33,5 @@ git commit -m "Auto-Update: %TIMESTAMP%"
 echo Pushing...
 git push origin %BRANCH%
 
-echo Check https://github.com/WBGu/Inventory
-echo to see if it is updated.
+@echo off
+echo Check https://github.com/WBGu/Inventory to see if it is updated.

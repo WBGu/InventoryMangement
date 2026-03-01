@@ -6,10 +6,13 @@ import os
 import json
 import shutil
 from collections import Counter
+from pathlib import Path
+import webbrowser
 
 # --- CONFIGURATION ---
 # This is the path to the separate inventory data repository folder. Should have .git in it
-DATA_REPO_PATH = r"C:\Users\weibi\Desktop\InventoryMangement\Inventory" 
+current_script_dir = Path(__file__).resolve().parent
+DATA_REPO_PATH = current_script_dir.parent / "Inventory"
 
 # The name of the inventory file
 FILENAME = "inventory.json"
@@ -17,6 +20,14 @@ FILENAME = "inventory.json"
 # Derived Paths
 LOCAL_FILE = os.path.join(os.getcwd(), FILENAME)
 REMOTE_FILE = os.path.join(DATA_REPO_PATH, FILENAME)
+
+def flush_dns():
+    try:
+        # shell=True is needed for Windows commands like ipconfig
+        subprocess.run("ipconfig /flushdns", shell=True, check=True)
+        print("Successfully flushed the DNS Resolver Cache.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to flush DNS: {e}")
 
 class InventoryApp:
     def __init__(self, root):
@@ -446,6 +457,8 @@ class InventoryApp:
             
             if result.returncode == 0:
                 messagebox.showinfo("Git Push Success", result.stdout)
+                url = "https://github.com/WBGu/Inventory/tree/main"
+                webbrowser.open(url)
             else:
                 messagebox.showerror("Git Push Error", result.stderr)
         except Exception as e:
@@ -491,6 +504,7 @@ class InventoryApp:
             pass
 
 if __name__ == "__main__":
+    flush_dns()
     root = tk.Tk()
     app = InventoryApp(root)
     root.mainloop()
