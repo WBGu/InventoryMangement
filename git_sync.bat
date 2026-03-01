@@ -32,4 +32,6 @@ git commit -m "Auto-Update: %TIMESTAMP%"
 :: 4. Push to remote
 echo Pushing...
 git push origin %BRANCH%
-echo Pushed to Git
+
+echo Check https://github.com/WBGu/Inventory
+echo to see if it is updated.
