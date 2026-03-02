@@ -462,6 +462,7 @@ class InventoryApp:
             
             if result.returncode == 0:
                 messagebox.showinfo("Git Push Success", result.stdout)
+                flush_dns()
                 url = "https://github.com/WBGu/Inventory/tree/main"
                 webbrowser.open(url)
             else:
